@@ -7,6 +7,7 @@ dependencies:
   helmet: 3.21.2
   mocha: 6.2.2
   mongodb: 3.4.1
+  request: 2.88.0
   zombie: 6.1.4
 packages:
   /@types/chai/4.2.7:
@@ -2079,4 +2080,5 @@ specifiers:
   helmet: ^3.21.2
   mocha: ^6.2.1
   mongodb: ^3.4.1
+  request: ^2.88.0
   zombie: ^6.1.4
