@@ -2,6 +2,7 @@
 
 var MongoClient = require("mongodb");
 var assert = require('chai').assert;
+const https = require('https');
 
 const CONNECTION_STRING = process.env.DB;
 
@@ -11,7 +12,8 @@ module.exports = (app)=> {
     let like = req.query.like.toLowerCase() === "true";
     MongoClient.connect(CONNECTION_STRING, (err, client)=> {
       assert.equal(null, err);
-      let col = client.db("test").col(stock);
+      let col = client.db("test").col("stocksip");
+      
     });
   });
 };
