@@ -86,28 +86,36 @@ module.exports = app => {
 
   app.route("/api/stock-prices").get((req, res) => {
     console.log(req.query.stock);
-    if (!req.query.stock
-    ){
+    if (!req.query.stock) {
       return res.json({
         stockData: { error: "external source error", likes: 0 }
       });
-    }else if(typeof req.query.stock !== "string" && req.query.stock.every(s => !s)){
-                   return res.json({"stockData":[{"error":"external source error","rel_likes":0},{"error":"external source error","rel_likes":0}]}
+    } else if (
+      typeof req.query.stock !== "string" &&
+      req.query.stock.every(s => !s)
+    ) {
+      return res.json({
+        stockData: [
+          { error: "external source error", rel_likes: 0 },
+          { error: "external source error", rel_likes: 0 }
+        ]
       });
-             
-             }
+    }
     let stock = [];
     typeof req.query.stock == "string"
-      ? stock.push(req.query.stock.trim())
-      : req.query.stock;
+      ? stock.push(req.query.stock)
+      : stock = req.query.stock;
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
+    console.log(stock);
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       (error, response, body1) => {
         if (!error && response.statusCode == 200) {
           body1 = JSON.parse(body1);
-          if (stock[1]) {
+          if (!stock[1]) {
+            next1(res, like, ip, body1);
+          } else {
             request(
               "https://repeated-alpaca.glitch.me/v1/stock/" +
                 stock[1] +
@@ -119,8 +127,6 @@ module.exports = app => {
                 }
               }
             );
-          } else {
-            next1(res, like, ip, body1);
           }
         }
       }
