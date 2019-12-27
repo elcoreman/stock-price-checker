@@ -8,18 +8,22 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const stocks = (res, result, like, ip, d1, d2) => {
-    console.log(d1.symbol);
     MongoClient.connect(
       CONNECTION_STRING,
       { useUnifiedTopology: true },
       (err, client) => {
-        console.log(d1.symbol);
         assert.equal(null, err);
         let col = client.db("test").collection("stocks_ip");
         let q = {};
-        console.log(d1.symbol);
         q.symbol = d1.symbol.toLowerCase();
         q.ips = { $nin: [ip] };
+        
+        
+        if(like){
+          col.findAndUpdate();
+        }
+        
+        
         col.findOneAndUpdate(
           q,
           like ? { $push: { ips: ip } } : {},
