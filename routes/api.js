@@ -43,9 +43,24 @@ module.exports = app => {
 
   const next1 = (res, like, ip, d1, d2) => {
     console.log(d1, d2);
-    if (d1 == "Invalid symbol" && d2 == "Invalid symbol") {
+    if (d1 == "Invalid symbol" && d2 == "Invalid symbol")
       return res.json({ stockData: [{ rel_likes: 0 }, { rel_likes: 0 }] });
-    }
+    else if (d1 == "Invalid symbol" && d2 === null)
+      return res.json({ stockData: { likes: 0 } });
+    else if (d1 == "Invalid symbol" && d2 === false)
+      return res.json({
+        stockData: [
+          { rel_likes: 0 },
+          { error: "external source error", rel_likes: 0 }
+        ]
+      });
+    else if (d1 === false && d2 == "Invalid symbol")
+      return res.json({
+        stockData: [
+          { error: "external source error", rel_likes: 0 },
+          { rel_likes: 0 }
+        ]
+      });
     MongoClient.connect(
       CONNECTION_STRING,
       { useUnifiedTopology: true },
