@@ -8,6 +8,7 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, d1, d2) => {
+    console.log(d1);
     col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
       assert.equal(null, err);
       console.log("err", err);
@@ -41,9 +42,19 @@ module.exports = app => {
   };
 
   const next1 = (res, like, ip, d1, d2) => {
-    if(d1 == "Invalid symbol" && d2 == "Invalid symbol") return res.json({ stockData: { likes: 0 } });
-    if(d1 == "Invalid symbol" && d2 == "Invalid symbol") return res.json({ stockData: { likes: 0 } });
-    
+    console.log(d1, d2);
+    if (
+      (d1 == "Invalid symbol" && d2 == "Invalid symbol") ||
+      (d1 == "Invalid symbol" && !d2)
+    ) {
+      console.log("aa");
+      return res.json({ stockData: { likes: 0 } });
+    }
+    if (d1 == "Invalid symbol") {
+      d1 = d2;
+      d2 = null;
+      console.log("bb");
+    }
     MongoClient.connect(
       CONNECTION_STRING,
       { useUnifiedTopology: true },
@@ -75,7 +86,8 @@ module.exports = app => {
 
   app.route("/api/stock-prices").get((req, res) => {
     let stock = [];
-    typeof req.query.stock == "string"
+    console.log(req.query.stock, typeof req.query.stock);
+    (typeof req.query.stock == "string"&&req.query.stock)
       ? stock.push(req.query.stock)
       : req.query.stock;
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
