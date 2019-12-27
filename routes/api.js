@@ -7,14 +7,45 @@ const request = require("request");
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
-  const stocks = (res, result, like, ip, d1, d2) => {
+  const finish = (col, res, d1, d2) => {
+    col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
+      assert.equal(null, err);
+      let likesCount1 = dbResult.ips.length;
+      let res1 = {
+        stock: d1.symbol,
+        price: d1.latestPrice,
+        likes: likesCount1
+      };
+      if (!d2) {
+        res.json({
+          stockData: res1
+        });
+      } else {
+        col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
+          assert.equal(null, err);
+          let likesCount2 = dbResult.ips.length;
+          let res2 = {
+            stock: d2.symbol,
+            price: d2.latestPrice,
+            rel_likes: likesCount2 - likesCount1
+          };
+          delete res1.likes;
+          res2.rel_likes = likesCount1 - likesCount2;
+          res.json({
+            stockData: [res1, res2]
+          });
+        });
+      }
+    });
+  };
+
+  const getStocksInfo = (res, like, ip, d1, d2) => {
     MongoClient.connect(
       CONNECTION_STRING,
       { useUnifiedTopology: true },
       (err, client) => {
         assert.equal(null, err);
         let col = client.db("test").collection("stocks_ip");
-
         if (like) {
           let q1 = { symbol: d1.symbol.toLowerCase(), ips: { $nin: [ip] } };
           let q = q1;
@@ -22,98 +53,18 @@ module.exports = app => {
             let q2 = { symbol: d2.symbol.toLowerCase(), ips: { $nin: [ip] } };
             q = { $or: [q1, q2] };
           }
-          col.findAndUpdate(q, { $push: { ips: ip } }, {upsert: true}, (err, resdb)=>{
-            assert.equal(null, err);
-            //finish();
-          });
+          col.findAndUpdate(
+            q,
+            { $push: { ips: ip } },
+            { upsert: true },
+            (err, resdb) => {
+              assert.equal(null, err);
+              finish(col, res, d1, d2);
+            }
+          );
+        } else {
+          finish(col, res, d1, d2);
         }
-
-col.findOne({ symbol: q.symbol }, (err, dbResult) => {
-              assert.equal(null, err);
-              let likesCount1 = dbResult.ips.length;
-              let res1 = {
-                stock: d1.symbol,
-                price: d1.latestPrice,
-                likes: likesCount1
-              };
-              if (!d2) {
-                res.json({
-                  stockData: res1
-                });
-              } else {
-                q.symbol = d2.symbol.toLowerCase();
-                q.ips = { $nin: [ip] };
-                col.findOneAndUpdate(
-                  q,
-                  like ? { $push: { ips: ip } } : {},
-                  {},
-                  (err, dbResult) => {
-                    assert.equal(null, err);
-                    col.findOne({ symbol: q.symbol }, (err, dbResult) => {
-                      assert.equal(null, err);
-                      let likesCount2 = dbResult.ips.length;
-                      let res2 = {
-                        stock: d2.symbol,
-                        price: d2.latestPrice,
-                        rel_likes: likesCount2 - likesCount1
-                      };
-                      delete res1.likes;
-                      res2.rel_likes = likesCount1 - likesCount2;
-                      res.json({
-                        stockData: [res1, res2]
-                      });
-                    });
-                  }
-                );
-                
-        
-        /*col.findOneAndUpdate(
-          q,
-          like ? { $push: { ips: ip } } : {},
-          { returnOriginal: false },
-          (err, dbResult) => {
-            assert.equal(null, err);
-            col.findOne({ symbol: q.symbol }, (err, dbResult) => {
-              assert.equal(null, err);
-              let likesCount1 = dbResult.ips.length;
-              let res1 = {
-                stock: d1.symbol,
-                price: d1.latestPrice,
-                likes: likesCount1
-              };
-              if (!d2) {
-                res.json({
-                  stockData: res1
-                });
-              } else {
-                q.symbol = d2.symbol.toLowerCase();
-                q.ips = { $nin: [ip] };
-                col.findOneAndUpdate(
-                  q,
-                  like ? { $push: { ips: ip } } : {},
-                  {},
-                  (err, dbResult) => {
-                    assert.equal(null, err);
-                    col.findOne({ symbol: q.symbol }, (err, dbResult) => {
-                      assert.equal(null, err);
-                      let likesCount2 = dbResult.ips.length;
-                      let res2 = {
-                        stock: d2.symbol,
-                        price: d2.latestPrice,
-                        rel_likes: likesCount2 - likesCount1
-                      };
-                      delete res1.likes;
-                      res2.rel_likes = likesCount1 - likesCount2;
-                      res.json({
-                        stockData: [res1, res2]
-                      });
-                    });
-                  }
-                );
-              }
-            });
-          }
-        );*/
       }
     );
   };
@@ -124,9 +75,8 @@ col.findOne({ symbol: q.symbol }, (err, dbResult) => {
       ? stock.push(req.query.stock)
       : req.query.stock;
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
-    let result = { stockData: { likes: 0 } };
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-    if (stock == []) return res.json(result);
+    if (stock == []) return res.json({ stockData: { likes: 0 } });
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       (error, response, body1) => {
@@ -140,12 +90,12 @@ col.findOne({ symbol: q.symbol }, (err, dbResult) => {
               (error, response, body2) => {
                 if (!error && response.statusCode == 200) {
                   body2 = JSON.parse(body2);
-                  stocks(res, result, like, ip, body1, body2);
+                  ne(res, like, ip, body1, body2);
                 }
               }
             );
           } else {
-            stocks(res, result, like, ip, body1);
+            getStocksInfo(res, like, ip, body1);
           }
         }
       }
