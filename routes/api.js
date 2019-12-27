@@ -8,10 +8,10 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, d1, d2) => {
-    console.log(d1);
+    //console.log(d1);
     col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
       assert.equal(null, err);
-      console.log("err", err);
+      //console.log("err", err);
       let likesCount1 = dbResult ? dbResult.ips.length : 0;
       let res1 = {
         stock: d1.symbol,
@@ -42,7 +42,7 @@ module.exports = app => {
   };
 
   const next1 = (res, like, ip, d1, d2) => {
-    console.log(d1, d2);
+    console.log(!!d1, !!d2);
     if (
       (d1 == "Invalid symbol" && d2 == "Invalid symbol") ||
       (d1 == "Invalid symbol" && !d2)
@@ -107,7 +107,6 @@ module.exports = app => {
       : stock = req.query.stock;
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-    console.log(stock);
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       (error, response, body1) => {
