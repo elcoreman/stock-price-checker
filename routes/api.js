@@ -7,24 +7,31 @@ const get = require("https").get;
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
-  app.route("/api/stock-prices").get((req, res) => {
-    let stock = req.query.stock;
-    let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
+  const fn = (d1, d2) => {
+    console.log(d1, d2);
+  };
 
+  app.route("/api/stock-prices").get((req, res) => {
+    let stock = req.query.stock?req.query.stock.toArray():[] ;
+    let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     get(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       res =>
         res.on("data", data1 => {
-          if(stock[1]){
-                get(
-      "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
-      res =>
-        res.on("data", data1 => {
-          
-        })
-    ).on("error", err => {
-      console.error(err);
-    });
+          if (stock[1]) {
+            get(
+              "https://repeated-alpaca.glitch.me/v1/stock/" +
+                stock[1] +
+                "/quote",
+              res =>
+                res.on("data", data2 => {
+                  fn(data1, data2);
+                })
+            ).on("error", err => {
+              console.error(err);
+            });
+          } else {
+            fn(data1);
           }
         })
     ).on("error", err => {
