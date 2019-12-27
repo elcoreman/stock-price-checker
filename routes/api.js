@@ -7,7 +7,7 @@ const request = require("request");
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
-  const finish = (col, res, d1, d2) => {
+  const next2 = (col, res, d1, d2) => {
     col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
       assert.equal(null, err);
       let likesCount1 = dbResult.ips.length;
@@ -39,7 +39,7 @@ module.exports = app => {
     });
   };
 
-  const getStocksInfo = (res, like, ip, d1, d2) => {
+  const next1 = (res, like, ip, d1, d2) => {
     MongoClient.connect(
       CONNECTION_STRING,
       { useUnifiedTopology: true },
@@ -59,11 +59,11 @@ module.exports = app => {
             { upsert: true },
             (err, resdb) => {
               assert.equal(null, err);
-              finish(col, res, d1, d2);
+              next2(col, res, d1, d2);
             }
           );
         } else {
-          finish(col, res, d1, d2);
+          next2(col, res, d1, d2);
         }
       }
     );
@@ -90,12 +90,12 @@ module.exports = app => {
               (error, response, body2) => {
                 if (!error && response.statusCode == 200) {
                   body2 = JSON.parse(body2);
-                  ne(res, like, ip, body1, body2);
+                  next1(res, like, ip, body1, body2);
                 }
               }
             );
           } else {
-            getStocksInfo(res, like, ip, body1);
+            next1(res, like, ip, body1);
           }
         }
       }
