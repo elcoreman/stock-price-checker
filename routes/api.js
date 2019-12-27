@@ -6,14 +6,30 @@ const get = require("https").get;
 
 const CONNECTION_STRING = process.env.DB;
 
-
 module.exports = app => {
   app.route("/api/stock-prices").get((req, res) => {
     let stock = req.query.stock;
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
 
-    let a = getStockInfo("goog");
-    console.log(a);
+    get(
+      "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
+      res =>
+        res.on("data", data1 => {
+          if(stock[1]){
+                get(
+      "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
+      res =>
+        res.on("data", data1 => {
+          
+        })
+    ).on("error", err => {
+      console.error(err);
+    });
+          }
+        })
+    ).on("error", err => {
+      console.error(err);
+    });
 
     /*MongoClient.connect(CONNECTION_STRING, (err, client) => {
       assert.equal(null, err);
