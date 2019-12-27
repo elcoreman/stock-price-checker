@@ -85,12 +85,21 @@ module.exports = app => {
   };
 
   app.route("/api/stock-prices").get((req, res) => {
-    if (!req.query.stock) return res.json({"stockData":{"error":"external source error","likes":0}});
+    console.log(req.query.stock);
+    if (!req.query.stock
+    ){
+      return res.json({
+        stockData: { error: "external source error", likes: 0 }
+      });
+    }else if(typeof req.query.stock !== "string" && req.query.stock.every(s => !s)){
+                   return res.json({"stockData":[{"error":"external source error","rel_likes":0},{"error":"external source error","rel_likes":0}]}
+      });
+             
+             }
     let stock = [];
     typeof req.query.stock == "string"
       ? stock.push(req.query.stock.trim())
       : req.query.stock;
-    
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
     request(
