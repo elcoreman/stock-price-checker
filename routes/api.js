@@ -19,9 +19,9 @@ module.exports = app => {
         q.ips = { $nin: [ip] };
         
         
-        if(like){
-          col.findAndUpdate();
-        }
+        //if(like){
+          await col.findAndUpdate();
+        //}
         
         
         col.findOneAndUpdate(
