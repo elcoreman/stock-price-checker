@@ -12,7 +12,10 @@ module.exports = app => {
   };
 
   app.route("/api/stock-prices").get((req, res) => {
-    let stock = req.query.stock?req.query.stock.toArray():[] ;
+    let stock = [];
+    typeof req.query.stock == "string"
+      ? stock.push(req.query.stock)
+      : req.query.stock;
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     get(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
