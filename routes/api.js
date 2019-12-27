@@ -14,20 +14,63 @@ module.exports = app => {
       (err, client) => {
         assert.equal(null, err);
         let col = client.db("test").collection("stocks_ip");
-        let q = {};
-        q.symbol = d1.symbol.toLowerCase();
-        q.ips = { $nin: [ip] };
+
+        if (like) {
+          let q1 = { symbol: d1.symbol.toLowerCase(), ips: { $nin: [ip] } };
+          let q = q1;
+          if (d2) {
+            let q2 = { symbol: d2.symbol.toLowerCase(), ips: { $nin: [ip] } };
+            q = { $or: [q1, q2] };
+          }
+          col.findAndUpdate(q, { $push: { ips: ip } }, {upsert: true}, (err, resdb)=>{
+            assert.equal(null, err);
+            //finish();
+          });
+        }
+
+col.findOne({ symbol: q.symbol }, (err, dbResult) => {
+              assert.equal(null, err);
+              let likesCount1 = dbResult.ips.length;
+              let res1 = {
+                stock: d1.symbol,
+                price: d1.latestPrice,
+                likes: likesCount1
+              };
+              if (!d2) {
+                res.json({
+                  stockData: res1
+                });
+              } else {
+                q.symbol = d2.symbol.toLowerCase();
+                q.ips = { $nin: [ip] };
+                col.findOneAndUpdate(
+                  q,
+                  like ? { $push: { ips: ip } } : {},
+                  {},
+                  (err, dbResult) => {
+                    assert.equal(null, err);
+                    col.findOne({ symbol: q.symbol }, (err, dbResult) => {
+                      assert.equal(null, err);
+                      let likesCount2 = dbResult.ips.length;
+                      let res2 = {
+                        stock: d2.symbol,
+                        price: d2.latestPrice,
+                        rel_likes: likesCount2 - likesCount1
+                      };
+                      delete res1.likes;
+                      res2.rel_likes = likesCount1 - likesCount2;
+                      res.json({
+                        stockData: [res1, res2]
+                      });
+                    });
+                  }
+                );
+                
         
-        
-        //if(like){
-          await col.findAndUpdate();
-        //}
-        
-        
-        col.findOneAndUpdate(
+        /*col.findOneAndUpdate(
           q,
           like ? { $push: { ips: ip } } : {},
-          {returnOriginal: false},
+          { returnOriginal: false },
           (err, dbResult) => {
             assert.equal(null, err);
             col.findOne({ symbol: q.symbol }, (err, dbResult) => {
@@ -70,7 +113,7 @@ module.exports = app => {
               }
             });
           }
-        );
+        );*/
       }
     );
   };
