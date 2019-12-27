@@ -10,7 +10,8 @@ module.exports = app => {
   const next2 = (col, res, d1, d2) => {
     col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
       assert.equal(null, err);
-      let likesCount1 = dbResult.ips.length;
+      console.log("err", err);
+      let likesCount1 = dbResult ? dbResult.ips.length : 0;
       let res1 = {
         stock: d1.symbol,
         price: d1.latestPrice,
@@ -23,7 +24,7 @@ module.exports = app => {
       } else {
         col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
           assert.equal(null, err);
-          let likesCount2 = dbResult.ips.length;
+          let likesCount2 = dbResult ? dbResult.ips.length : 0;
           let res2 = {
             stock: d2.symbol,
             price: d2.latestPrice,
@@ -40,6 +41,9 @@ module.exports = app => {
   };
 
   const next1 = (res, like, ip, d1, d2) => {
+    if(d1 == "Invalid symbol" && d2 == "Invalid symbol") return res.json({ stockData: { likes: 0 } });
+    if(d1 == "Invalid symbol" && d2 == "Invalid symbol") return res.json({ stockData: { likes: 0 } });
+    
     MongoClient.connect(
       CONNECTION_STRING,
       { useUnifiedTopology: true },
