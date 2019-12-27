@@ -85,14 +85,14 @@ module.exports = app => {
   };
 
   app.route("/api/stock-prices").get((req, res) => {
+    if (!req.query.stock) return res.json({"stockData":{"error":"external source error","likes":0}});
     let stock = [];
-    console.log(req.query.stock, typeof req.query.stock);
-    (typeof req.query.stock == "string"&&req.query.stock)
-      ? stock.push(req.query.stock)
+    typeof req.query.stock == "string"
+      ? stock.push(req.query.stock.trim())
       : req.query.stock;
+    
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-    if (stock == []) return res.json({ stockData: { likes: 0 } });
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       (error, response, body1) => {
