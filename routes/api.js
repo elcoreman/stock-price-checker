@@ -42,19 +42,9 @@ module.exports = app => {
   };
 
   const next1 = (res, like, ip, d1, d2) => {
-    console.log(!!d1, !!d2);
     console.log(d1, d2);
-    if (
-      (d1 == "Invalid symbol" && d2 == "Invalid symbol") ||
-      (d1 == "Invalid symbol" && !d2)
-    ) {
-      console.log("aa");
-      return res.json({ stockData: { likes: 0 } });
-    }
-    if (d1 == "Invalid symbol") {
-      d1 = d2;
-      d2 = null;
-      console.log("bb");
+    if (d1 == "Invalid symbol" && d2 == "Invalid symbol") {
+      return res.json({ stockData: [{ rel_likes: 0 }, { rel_likes: 0 }] });
     }
     MongoClient.connect(
       CONNECTION_STRING,
@@ -86,7 +76,7 @@ module.exports = app => {
   };
 
   app.route("/api/stock-prices").get((req, res) => {
-    console.log(req.query);
+    //console.log(req.query);
     if (typeof req.query.stock === "undefined")
       return res.json({ stockData: { likes: 0 } });
     else if (!req.query.stock) {
@@ -110,28 +100,22 @@ module.exports = app => {
       : (stock = req.query.stock);
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-    console.log("req:", stock);
+    //console.log("req:", stock);
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
-      (error, response, body1) => {
-        if (!error && response.statusCode == 200) {
-          body1 = JSON.parse(body1);
-          //if (stock[1]) {
-          //next1(res, like, ip, body1);
-          //} else {
-          request(
-            "https://repeated-alpaca.glitch.me/v1/stock/" + (stock[1] ||
-              "") + "/quote",
-            (err, response, body2) => {
-              assert.equal(null, err);
-              if (!error && response.statusCode == 200) {
-                body2 = JSON.parse(body2);
-                next1(res, like, ip, body1, body2);
-              }
-            }
-          );
-          //}
-        }
+      (err, response, body1) => {
+        assert.equal(null, err);
+        body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
+        request(
+          "https://repeated-alpaca.glitch.me/v1/stock/" +
+            (stock[1] || "") +
+            "/quote",
+          (err, response, body2) => {
+            assert.equal(null, err);
+            body2 = response.statusCode == 200 ? JSON.parse(body2) : false;
+            next1(res, like, ip, body1, body2);
+          }
+        );
       }
     );
   });
