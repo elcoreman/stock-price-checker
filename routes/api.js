@@ -11,12 +11,19 @@ module.exports = app => {
     MongoClient.connect(CONNECTION_STRING, (err, client) => {
       assert.equal(null, err);
       let col = client.db("test").col("stocks_ip");
+      let q = {};
+      q.symbol = d1.symbol.toLowerCase();
+      q.ips = { $nin: [ip] };
       col.findOneAndUpdate(
-        { symbol: d1.symbol.toLowerCase(), ips: { $nin: [ip] } },
-        like ? { $set: { d: 1 } } : {},
+        q,
+        like ? { $push: { ips: ip } } : {},
         {},
         (err, dbResult) => {
           assert.equal(null, err);
+          col.findOne({ symbol: q.symbol }, (err, dbResult) => {
+            let likesCount = dbResult.ips.length;
+            
+          });
         }
       );
     });
