@@ -7,11 +7,18 @@ const request = require("request");
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
-  const stocks = (res, result, d1, d2) => {
+  const stocks = (res, result, like, d1, d2) => {
     MongoClient.connect(CONNECTION_STRING, (err, client) => {
       assert.equal(null, err);
       let col = client.db("test").col("stocks_ip");
-      
+      col.findOneAndUpdate(
+        { symbol: d1.symbol.toLowerCase() },
+        like ? { $set: { d: 1 } } : {},
+        {},
+        (err, dbResult) => {
+          assert.equal(null, err);
+        }
+      );
     });
   };
 
@@ -34,12 +41,12 @@ module.exports = app => {
                 "/quote",
               (error, response, body2) => {
                 if (!error && response.statusCode == 200) {
-                  stocks(res, result, body1, body2);
+                  stocks(res, result, like, body1, body2);
                 }
               }
             );
           } else {
-            stocks(res, result, body1);
+            stocks(res, result, like, body1);
           }
         }
       }
