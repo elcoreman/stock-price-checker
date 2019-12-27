@@ -43,6 +43,7 @@ module.exports = app => {
 
   const next1 = (res, like, ip, d1, d2) => {
     console.log(!!d1, !!d2);
+    console.log(d1, d2);
     if (
       (d1 == "Invalid symbol" && d2 == "Invalid symbol") ||
       (d1 == "Invalid symbol" && !d2)
@@ -85,8 +86,10 @@ module.exports = app => {
   };
 
   app.route("/api/stock-prices").get((req, res) => {
-    console.log(req.query.stock);
-    if (!req.query.stock) {
+    console.log(req.query);
+    if (typeof req.query.stock === "undefined")
+      return res.json({ stockData: { likes: 0 } });
+    else if (!req.query.stock) {
       return res.json({
         stockData: { error: "external source error", likes: 0 }
       });
@@ -104,29 +107,30 @@ module.exports = app => {
     let stock = [];
     typeof req.query.stock == "string"
       ? stock.push(req.query.stock)
-      : stock = req.query.stock;
+      : (stock = req.query.stock);
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
+    console.log("req:", stock);
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       (error, response, body1) => {
         if (!error && response.statusCode == 200) {
           body1 = JSON.parse(body1);
-          if (!stock[1]) {
-            next1(res, like, ip, body1);
-          } else {
-            request(
-              "https://repeated-alpaca.glitch.me/v1/stock/" +
-                stock[1] +
-                "/quote",
-              (error, response, body2) => {
-                if (!error && response.statusCode == 200) {
-                  body2 = JSON.parse(body2);
-                  next1(res, like, ip, body1, body2);
-                }
+          //if (stock[1]) {
+          //next1(res, like, ip, body1);
+          //} else {
+          request(
+            "https://repeated-alpaca.glitch.me/v1/stock/" + (stock[1] ||
+              "") + "/quote",
+            (err, response, body2) => {
+              assert.equal(null, err);
+              if (!error && response.statusCode == 200) {
+                body2 = JSON.parse(body2);
+                next1(res, like, ip, body1, body2);
               }
-            );
-          }
+            }
+          );
+          //}
         }
       }
     );
