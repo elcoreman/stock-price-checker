@@ -102,7 +102,7 @@ module.exports = app => {
             if (values[1]) {
               let q2 = {
                 symbol: values[1].symbol.toLowerCase(),
-                ips: { $nin: [ip] }
+                ips: { $nin: [ip]]
               };
               q = { $or: [q1, q2] };
             }
