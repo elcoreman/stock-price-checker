@@ -96,12 +96,15 @@ module.exports = app => {
     let StockIsArray = typeof stock !== "string";
     let stockIsFalsy = !stock;
     if (StockIsUndefined) {
+      // not has query
       return res.json({ stockData: { likes: 0 } });
     } else if (stockIsFalsy) {
+      // string with no value
       return res.json({
         stockData: { error: "external source error", likes: 0 }
       });
     } else if (StockIsArray && stock.every(s => !s)) {
+      // array with no values
       return res.json({
         stockData: [
           { error: "external source error", rel_likes: 0 },
@@ -116,26 +119,34 @@ module.exports = app => {
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
 
-    request(
-      "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
-      (err, response, body1) => {
-        assert.equal(null, err);
-        body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
-        return body1;
+    Promise.all([
+      () => {
+        if (stock[0]) {
+          request(
+            "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
+            (err, response, body1) => {
+              assert.equal(null, err);
+              body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
+              return body1;
+            }
+          );
+        } else return null;
+      },
+      () => {
+        if (stock[1]) {
+          request(
+            "https://repeated-alpaca.glitch.me/v1/stock/" +
+              (stock[1] || "") +
+              "/quote",
+            (err, response, body2) => {
+              assert.equal(null, err);
+              body2 = response.statusCode == 200 ? JSON.parse(body2) : false;
+              return body2;
+              //next1(res, like, ip, body1, body2);
+            }
+          );
+        } else return null;
       }
-    );
-
-    request(
-      "https://repeated-alpaca.glitch.me/v1/stock/" +
-        (stock[1] || "") +
-        "/quote",
-      (err, response, body2) => {
-        assert.equal(null, err);
-        body2 = response.statusCode == 200 ? JSON.parse(body2) : false;
-        next1(res, like, ip, body1, body2);
-      }
-    );
-    
-    
+    ]).then(values => console.log(values));
   });
 };
