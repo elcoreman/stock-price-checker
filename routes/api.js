@@ -7,31 +7,48 @@ const request = require("request-promise-native");
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
-  const next2 = (col, res, d1, d2) => {
+  const next2 = (col, res, values) => {
     Promise.all([
-      !d1
-        ? d1
-        : col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
-            assert.equal(null, err);
-            let likesCount1 = dbResult ? dbResult.ips.length : 0;
-            return {
-              stock: d1.symbol,
-              price: d1.latestPrice,
-              likes: likesCount1
-            };
-          }),
-      !d1
-        ? d1
-        : col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
-        assert.equal(null, err);
-        let likesCount2 = dbResult ? dbResult.ips.length : 0;
-        return {
-          stock: d2.symbol,
-          price: d2.latestPrice,
-          likes: likesCount2
-        };
-      })
-    ]).then(values => {});
+      !values[0]
+        ? values[0]
+        : col.findOne(
+            { symbol: values[0].symbol.toLowerCase() },
+            (err, dbResult) => {
+              assert.equal(null, err);
+              let likesCount1 = dbResult ? dbResult.ips.length : 0;
+              return {
+                stock: values[0].symbol,
+                price: values[0].latestPrice,
+                likes: likesCount1
+              };
+            }
+          ),
+      !values[1]
+        ? values[1]
+        : col.findOne(
+            { symbol: values[1].symbol.toLowerCase() },
+            (err, dbResult) => {
+              assert.equal(null, err);
+              let likesCount2 = dbResult ? dbResult.ips.length : 0;
+              return {
+                stock: values[1].symbol,
+                price: values[1].latestPrice,
+                likes: likesCount2
+              };
+            }
+          )
+    ]).then(values => {
+      if (values[0] == undefined && values[1] == undefined)
+        res.json({ stockData: { likes: 0 } });
+
+      if (values[0] == null && values[1] == null)
+        
+      if (values[0] == null)
+        values[0] = {"error":"external source error","rel_likes":0};
+      if (values[1] == null)
+        values[1] = {"error":"external source error","rel_likes":0};
+      
+    });
   };
 
   app.route("/api/stock-prices").get((req, res) => {
@@ -85,7 +102,7 @@ module.exports = app => {
           assert.equal(null, err);
           let col = client.db("test").collection("stocks_ip");
           if (!like) {
-            next2(col, res, values[0], values[1]);
+            next2(col, res, values);
           } else {
             let q1 = {
               symbol: values[0].symbol.toLowerCase(),
@@ -105,7 +122,7 @@ module.exports = app => {
               { upsert: true },
               (err, resdb) => {
                 assert.equal(null, err);
-                next2(col, res, values[0], values[1]);
+                next2(col, res, values);
               }
             );
           }
