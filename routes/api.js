@@ -92,33 +92,29 @@ module.exports = app => {
 
   app.route("/api/stock-prices").get((req, res) => {
     let stock = req.query.stock;
-    let StockIsUndefined = typeof stock === "undefined";
+    /*let StockIsUndefined = typeof stock === "undefined";
     let StockIsArray = typeof stock !== "string";
     let stockIsFalsy = !stock;
-    
-    
     if (StockIsUndefined)
       return res.json({ stockData: { likes: 0 } });
       
-    if (stockIsFalsy) {
+    if (stockIsFalsy)
       return res.json({
         stockData: { error: "external source error", likes: 0 }
       });
-    }
     if (StockIsArray && stock.every(s => !s)) {
-      // array with no values
       return res.json({
         stockData: [
           { error: "external source error", rel_likes: 0 },
           { error: "external source error", rel_likes: 0 }
         ]
       });
-    }
-    
-    
-    if (!StockIsArray) {
+    }*/
+    if (typeof stock === "undefined") {
+      stock = [undefined, undefined];
+    } else if (typeof stock === "string") {
       stock = [];
-      stock.push(stock);
+      stock.push(stock).push(undefined);
     }
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
