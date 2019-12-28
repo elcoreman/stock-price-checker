@@ -41,90 +41,20 @@ module.exports = app => {
     });
   };
 
-  const next1 = (res, like, ip, d1, d2) => {
-    console.log(d1, d2);
-    if (d1 == "Invalid symbol" && d2 == "Invalid symbol")
-      return res.json({ stockData: [{ rel_likes: 0 }, { rel_likes: 0 }] });
-    else if (d1 == "Invalid symbol" && d2 === null)
-      return res.json({ stockData: { likes: 0 } });
-    else if (d1 == "Invalid symbol" && d2 === false)
-      return res.json({
-        stockData: [
-          { rel_likes: 0 },
-          { error: "external source error", rel_likes: 0 }
-        ]
-      });
-    else if (d1 === false && d2 == "Invalid symbol")
-      return res.json({
-        stockData: [
-          { error: "external source error", rel_likes: 0 },
-          { rel_likes: 0 }
-        ]
-      });
-    MongoClient.connect(
-      CONNECTION_STRING,
-      { useUnifiedTopology: true },
-      (err, client) => {
-        assert.equal(null, err);
-        let col = client.db("test").collection("stocks_ip");
-        if (like) {
-          let q1 = { symbol: d1.symbol.toLowerCase(), ips: { $nin: [ip] } };
-          let q = q1;
-          if (d2) {
-            let q2 = { symbol: d2.symbol.toLowerCase(), ips: { $nin: [ip] } };
-            q = { $or: [q1, q2] };
-          }
-          col.findAndUpdate(
-            q,
-            { $push: { ips: ip } },
-            { upsert: true },
-            (err, resdb) => {
-              assert.equal(null, err);
-              next2(col, res, d1, d2);
-            }
-          );
-        } else {
-          next2(col, res, d1, d2);
-        }
-      }
-    );
-  };
-
   app.route("/api/stock-prices").get((req, res) => {
     let stock = req.query.stock;
-    /*let StockIsUndefined = typeof stock === "undefined";
-    let StockIsArray = typeof stock !== "string";
-    let stockIsFalsy = !stock;
-    if (StockIsUndefined)
-      return res.json({ stockData: { likes: 0 } });
-      
-    if (stockIsFalsy)
-      return res.json({
-        stockData: { error: "external source error", likes: 0 }
-      });
-    if (StockIsArray && stock.every(s => !s)) {
-      return res.json({
-        stockData: [
-          { error: "external source error", rel_likes: 0 },
-          { error: "external source error", rel_likes: 0 }
-        ]
-      });
-    }*/
     if (typeof stock === "undefined") {
       stock = [undefined, undefined];
     } else if (typeof stock === "string") {
-      console.log(stock);
       stock = [];
-      stock.push(stock);
+      stock.push(req.query.stock);
       stock.push(undefined);
-      console.log(stock);
     } else {
       if (!stock[0]) stock[0] = null;
       if (!stock[1]) stock[1] = null;
     }
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-console.log(stock);
     Promise.all([
       !stock[0]
         ? stock[0]
@@ -154,6 +84,40 @@ console.log(stock);
               response.statusCode == 200 ? JSON.parse(response.body) : false
             )
             .catch(err => console.log("err:", err))
-    ]).then(values => console.log(values));
+    ]).then(values => {
+      MongoClient.connect(
+        CONNECTION_STRING,
+        { useUnifiedTopology: true },
+        (err, client) => {
+          assert.equal(null, err);
+          let col = client.db("test").collection("stocks_ip");
+          if (like) {
+            let q1 = {
+              symbol: values[0].symbol.toLowerCase(),
+              ips: { $nin: [ip] }
+            };
+            let q = q1;
+            if (values[1]) {
+              let q2 = {
+                symbol: values[1].symbol.toLowerCase(),
+                ips: { $nin: [ip] }
+              };
+              q = { $or: [q1, q2] };
+            }
+            col.findAndUpdate(
+              q,
+              { $push: { ips: ip } },
+              { upsert: true },
+              (err, resdb) => {
+                assert.equal(null, err);
+                next2(col, res, values[0], values[1]);
+              }
+            );
+          } else {
+            next2(col, res, values[0], values[1]);
+          }
+        }
+      );
+    });
   });
 };
