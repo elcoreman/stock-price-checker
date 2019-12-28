@@ -120,20 +120,26 @@ module.exports = app => {
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
 
     Promise.all([
-      request(
-        "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote"
-      )
+      request({
+        methode: "GET",
+        uri:
+          "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
+        resolveWithFullResponse: true
+      })
         .then(response =>
-          response.statusCode == 200 ? JSON.parse(response.body) : response
+          response.statusCode == 200 ? JSON.parse(response.body) : false
         )
-        .catch(err => console.log(err)),
-      request(
-        "https://repeated-alpaca.glitch.me/v1/stock/" + stock[1] + "/quote"
-      )
+        .catch(err => console.log("err:", err)),
+      request({
+        methode: "GET",
+        uri:
+          "https://repeated-alpaca.glitch.me/v1/stock/" + stock[1] + "/quote",
+        resolveWithFullResponse: true
+      })
         .then(response =>
-          response.statusCode == 200 ? JSON.parse(response.body) : response
+          response.statusCode == 200 ? JSON.parse(response.body) : false
         )
-        .catch(err => console.log(err))
+        .catch(err => console.log("err:", err))
     ]).then(values => console.log(values));
   });
 };
