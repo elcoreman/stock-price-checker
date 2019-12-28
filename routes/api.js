@@ -91,7 +91,9 @@ module.exports = app => {
         (err, client) => {
           assert.equal(null, err);
           let col = client.db("test").collection("stocks_ip");
-          if (like) {
+          if (!like) {
+            next2(col, res, values[0], values[1]);
+          } else {
             let q1 = {
               symbol: values[0].symbol.toLowerCase(),
               ips: { $nin: [ip] }
@@ -113,8 +115,6 @@ module.exports = app => {
                 next2(col, res, values[0], values[1]);
               }
             );
-          } else {
-            next2(col, res, values[0], values[1]);
           }
         }
       );
