@@ -122,18 +122,18 @@ module.exports = app => {
     Promise.all([
       request(
         "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote"
-      ).then((err, response, body1) => {
-        assert.equal(null, err);
-        body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
-        return body1;
-      }),
+      )
+        .then(response =>
+          response.statusCode == 200 ? JSON.parse(response.body) : response
+        )
+        .catch(err => console.log(err)),
       request(
-        "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote"
-      ).then((err, response, body1) => {
-        assert.equal(null, err);
-        body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
-        return body1;
-      })
+        "https://repeated-alpaca.glitch.me/v1/stock/" + stock[1] + "/quote"
+      )
+        .then(response =>
+          response.statusCode == 200 ? JSON.parse(response.body) : response
+        )
+        .catch(err => console.log(err))
     ]).then(values => console.log(values));
   });
 };
