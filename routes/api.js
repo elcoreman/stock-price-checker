@@ -8,35 +8,30 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, d1, d2) => {
-
-    
-    
-    col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
-      assert.equal(null, err);
-      let likesCount1 = dbResult ? dbResult.ips.length : 0;
-      let res1 = {
-        stock: d1.symbol,
-        price: d1.latestPrice,
-        likes: likesCount1
-      };
-    });
-    
-     col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
-          assert.equal(null, err);
-          let likesCount2 = dbResult ? dbResult.ips.length : 0;
-          let res2 = {
-            stock: d2.symbol,
-            price: d2.latestPrice,
-            rel_likes: likesCount2 - likesCount1
-          };
-          delete res1.likes;
-          res2.rel_likes = likesCount1 - likesCount2;
-          res.json({
-            stockData: [res1, res2]
-          });
-        });
-    
-    
+    Promise.all([
+      !d1
+        ? d1
+        : col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
+            assert.equal(null, err);
+            let likesCount1 = dbResult ? dbResult.ips.length : 0;
+            return {
+              stock: d1.symbol,
+              price: d1.latestPrice,
+              likes: likesCount1
+            };
+          }),
+      !d1
+        ? d1
+        : col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
+        assert.equal(null, err);
+        let likesCount2 = dbResult ? dbResult.ips.length : 0;
+        return {
+          stock: d2.symbol,
+          price: d2.latestPrice,
+          likes: likesCount2
+        };
+      })
+    ]).then(values => {});
   };
 
   app.route("/api/stock-prices").get((req, res) => {
