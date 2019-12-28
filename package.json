@@ -16,7 +16,8 @@
     "mocha": "^6.2.1",
     "zombie": "^6.1.4",
     "helmet": "^3.21.2",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.8"
   },
   "engines": {
     "node": "12.2.0"
