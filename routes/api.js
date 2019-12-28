@@ -91,17 +91,17 @@ module.exports = app => {
   };
 
   app.route("/api/stock-prices").get((req, res) => {
-    //console.log(req.query);
-    if (typeof req.query.stock === "undefined")
+    let stock = req.query.stock;
+    let StockIsUndefined = typeof stock === "undefined";
+    let StockIsArray = typeof stock !== "string";
+    let stockIsFalsy = !stock;
+    if (StockIsUndefined) {
       return res.json({ stockData: { likes: 0 } });
-    else if (!req.query.stock) {
+    } else if (stockIsFalsy) {
       return res.json({
         stockData: { error: "external source error", likes: 0 }
       });
-    } else if (
-      typeof req.query.stock !== "string" &&
-      req.query.stock.every(s => !s)
-    ) {
+    } else if (StockIsArray && stock.every(s => !s)) {
       return res.json({
         stockData: [
           { error: "external source error", rel_likes: 0 },
@@ -109,29 +109,33 @@ module.exports = app => {
         ]
       });
     }
-    let stock = [];
-    typeof req.query.stock == "string"
-      ? stock.push(req.query.stock)
-      : (stock = req.query.stock);
+    if (!StockIsArray) {
+      stock = [];
+      stock.push(stock);
+    }
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-    //console.log("req:", stock);
+
     request(
       "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
       (err, response, body1) => {
         assert.equal(null, err);
         body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
-        request(
-          "https://repeated-alpaca.glitch.me/v1/stock/" +
-            (stock[1] || "") +
-            "/quote",
-          (err, response, body2) => {
-            assert.equal(null, err);
-            body2 = response.statusCode == 200 ? JSON.parse(body2) : false;
-            next1(res, like, ip, body1, body2);
-          }
-        );
+        return body1;
       }
     );
+
+    request(
+      "https://repeated-alpaca.glitch.me/v1/stock/" +
+        (stock[1] || "") +
+        "/quote",
+      (err, response, body2) => {
+        assert.equal(null, err);
+        body2 = response.statusCode == 200 ? JSON.parse(body2) : false;
+        next1(res, like, ip, body1, body2);
+      }
+    );
+    
+    
   });
 };
