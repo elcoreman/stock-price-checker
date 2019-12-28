@@ -8,22 +8,20 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, d1, d2) => {
-    //console.log(d1);
+
+    
+    
     col.findOne({ symbol: d1.symbol.toLowerCase() }, (err, dbResult) => {
       assert.equal(null, err);
-      //console.log("err", err);
       let likesCount1 = dbResult ? dbResult.ips.length : 0;
       let res1 = {
         stock: d1.symbol,
         price: d1.latestPrice,
         likes: likesCount1
       };
-      if (!d2) {
-        res.json({
-          stockData: res1
-        });
-      } else {
-        col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
+    });
+    
+     col.findOne({ symbol: d2.symbol.toLowerCase() }, (err, dbResult) => {
           assert.equal(null, err);
           let likesCount2 = dbResult ? dbResult.ips.length : 0;
           let res2 = {
@@ -37,8 +35,8 @@ module.exports = app => {
             stockData: [res1, res2]
           });
         });
-      }
-    });
+    
+    
   };
 
   app.route("/api/stock-prices").get((req, res) => {
@@ -102,7 +100,7 @@ module.exports = app => {
             if (values[1]) {
               let q2 = {
                 symbol: values[1].symbol.toLowerCase(),
-                ips: { $nin: [ip]]
+                ips: { $nin: [ip] }
               };
               q = { $or: [q1, q2] };
             }
