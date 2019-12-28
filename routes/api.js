@@ -95,15 +95,17 @@ module.exports = app => {
     let StockIsUndefined = typeof stock === "undefined";
     let StockIsArray = typeof stock !== "string";
     let stockIsFalsy = !stock;
-    if (StockIsUndefined) {
-      // not has query
+    
+    
+    if (StockIsUndefined)
       return res.json({ stockData: { likes: 0 } });
-    } else if (stockIsFalsy) {
-      // string with no value
+      
+    if (stockIsFalsy) {
       return res.json({
         stockData: { error: "external source error", likes: 0 }
       });
-    } else if (StockIsArray && stock.every(s => !s)) {
+    }
+    if (StockIsArray && stock.every(s => !s)) {
       // array with no values
       return res.json({
         stockData: [
@@ -112,6 +114,8 @@ module.exports = app => {
         ]
       });
     }
+    
+    
     if (!StockIsArray) {
       stock = [];
       stock.push(stock);
@@ -120,26 +124,34 @@ module.exports = app => {
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
 
     Promise.all([
-      request({
-        methode: "GET",
-        uri:
-          "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
-        resolveWithFullResponse: true
-      })
-        .then(response =>
-          response.statusCode == 200 ? JSON.parse(response.body) : false
-        )
-        .catch(err => console.log("err:", err)),
-      request({
-        methode: "GET",
-        uri:
-          "https://repeated-alpaca.glitch.me/v1/stock/" + stock[1] + "/quote",
-        resolveWithFullResponse: true
-      })
-        .then(response =>
-          response.statusCode == 200 ? JSON.parse(response.body) : false
-        )
-        .catch(err => console.log("err:", err))
+      !stock[0]
+        ? null
+        : request({
+            methode: "GET",
+            uri:
+              "https://repeated-alpaca.glitch.me/v1/stock/" +
+              stock[0] +
+              "/quote",
+            resolveWithFullResponse: true
+          })
+            .then(response =>
+              response.statusCode == 200 ? JSON.parse(response.body) : false
+            )
+            .catch(err => console.log("err:", err)),
+      !stock[1]
+        ? null
+        : request({
+            methode: "GET",
+            uri:
+              "https://repeated-alpaca.glitch.me/v1/stock/" +
+              stock[1] +
+              "/quote",
+            resolveWithFullResponse: true
+          })
+            .then(response =>
+              response.statusCode == 200 ? JSON.parse(response.body) : false
+            )
+            .catch(err => console.log("err:", err))
     ]).then(values => console.log(values));
   });
 };
