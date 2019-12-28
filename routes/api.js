@@ -38,16 +38,22 @@ module.exports = app => {
             }
           )
     ]).then(values => {
+      let result = [];
+
       if (values[0] == undefined && values[1] == undefined)
         res.json({ stockData: { likes: 0 } });
 
-      if (values[0] == null && values[1] == null)
-        
-      if (values[0] == null)
-        values[0] = {"error":"external source error","rel_likes":0};
-      if (values[1] == null)
-        values[1] = {"error":"external source error","rel_likes":0};
-      
+      if (values[0] !== undefined && values[1] !== undefined) {
+        // both exist
+      } else {
+        // only one
+        if (values[0] === null)
+          result[0] = { error: "external source error", likes: 0 };
+        else if (values[1] === null)
+          result[1] = { error: "external source error", likes: 0 };
+        else if (values[0] === false) result[0] = { likes: 0 };
+        else if (values[1] === false) result[1] = { likes: 0 };
+      }
     });
   };
 
