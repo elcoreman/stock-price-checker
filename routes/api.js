@@ -113,15 +113,21 @@ module.exports = app => {
     if (typeof stock === "undefined") {
       stock = [undefined, undefined];
     } else if (typeof stock === "string") {
+      console.log(stock);
       stock = [];
-      stock.push(stock).push(undefined);
+      stock.push(stock);
+      stock.push(undefined);
+      console.log(stock);
+    } else {
+      if (!stock[0]) stock[0] = null;
+      if (!stock[1]) stock[1] = null;
     }
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
-
+console.log(stock);
     Promise.all([
       !stock[0]
-        ? null
+        ? stock[0]
         : request({
             methode: "GET",
             uri:
@@ -135,7 +141,7 @@ module.exports = app => {
             )
             .catch(err => console.log("err:", err)),
       !stock[1]
-        ? null
+        ? stock[1]
         : request({
             methode: "GET",
             uri:
