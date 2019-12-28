@@ -2,7 +2,7 @@
 
 var MongoClient = require("mongodb");
 var assert = require("chai").assert;
-const request = require("request");
+const request = require("request-promise-native");
 
 const CONNECTION_STRING = process.env.DB;
 
@@ -120,33 +120,20 @@ module.exports = app => {
     const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
 
     Promise.all([
-      () => {
-        if (stock[0]) {
-          request(
-            "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote",
-            (err, response, body1) => {
-              assert.equal(null, err);
-              body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
-              return body1;
-            }
-          );
-        } else return null;
-      },
-      () => {
-        if (stock[1]) {
-          request(
-            "https://repeated-alpaca.glitch.me/v1/stock/" +
-              (stock[1] || "") +
-              "/quote",
-            (err, response, body2) => {
-              assert.equal(null, err);
-              body2 = response.statusCode == 200 ? JSON.parse(body2) : false;
-              return body2;
-              //next1(res, like, ip, body1, body2);
-            }
-          );
-        } else return null;
-      }
+      request(
+        "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote"
+      ).then((err, response, body1) => {
+        assert.equal(null, err);
+        body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
+        return body1;
+      }),
+      request(
+        "https://repeated-alpaca.glitch.me/v1/stock/" + stock[0] + "/quote"
+      ).then((err, response, body1) => {
+        assert.equal(null, err);
+        body1 = response.statusCode == 200 ? JSON.parse(body1) : false;
+        return body1;
+      })
     ]).then(values => console.log(values));
   });
 };
