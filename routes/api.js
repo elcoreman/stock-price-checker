@@ -38,7 +38,9 @@ module.exports = app => {
             resolveWithFullResponse: true
           })
             .then(response =>
-              response.statusCode == 200 ? JSON.parse(response.body) : false
+              response.statusCode == 200 && response.body != "Invalid symbol"
+                ? JSON.parse(response.body)
+                : false
             )
             .catch(err => console.log("err:", err)),
       !stock[1]
@@ -51,11 +53,16 @@ module.exports = app => {
               "/quote",
             resolveWithFullResponse: true
           })
-            .then(response =>
-              response.statusCode == 200 ? JSON.parse(response.body) : false
+            .then(response =>{
+              console.log(response.body);
+              response.statusCode == 200 && response.body !== "Invalid symbol"
+                ? JSON.parse(response.body)
+                : false
+            }
             )
             .catch(err => console.log("err:", err))
     ]).then(values => {
+      console.log(!like, values[0], !like, values[1]);
       MongoClient.connect(
         CONNECTION_STRING,
         { useUnifiedTopology: true },
@@ -63,7 +70,7 @@ module.exports = app => {
           assert.equal(null, err);
           let col = client.db("test").collection("stocks_ip");
           Promise.all([
-            (!like&&!values[0])
+            !like || !values[0]
               ? like
               : col
                   .findOne({ symbol: values[0].symbol.toLowerCase() })
@@ -82,7 +89,7 @@ module.exports = app => {
                     );
                   })
                   .catch(err => console.log("err:", err)),
-            !like
+            !like || !values[1]
               ? like
               : col
                   .findOne({ symbol: values[1].symbol.toLowerCase() })
