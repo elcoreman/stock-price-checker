@@ -8,40 +8,36 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, values) => {
-    //console.log(values);
     Promise.all([
       !values[0]
         ? values[0]
-        : col.findOne(
-            { symbol: values[0].symbol.toLowerCase() },
-            (err, dbResult) => {
-              assert.equal(null, err);
+        : col
+            .findOne({ symbol: values[0].symbol.toLowerCase() })
+            .then(dbResult => {
               return {
                 stock: values[0].symbol,
                 price: values[0].latestPrice,
                 likes: dbResult ? dbResult.ips.length : 0
               };
-            }
-          ),
+            })
+            .catch(err => console.log("err:", err)),
       !values[1]
         ? values[1]
-        : col.findOne(
-            { symbol: values[1].symbol.toLowerCase() },
-            (err, dbResult) => {
-              assert.equal(null, err);
+        : col
+            .findOne({ symbol: values[1].symbol.toLowerCase() })
+            .then(dbResult => {
               return {
                 stock: values[1].symbol,
                 price: values[1].latestPrice,
                 likes: dbResult ? dbResult.ips.length : 0
               };
-            }
-          )
+            })
+            .catch(err => console.log("err:", err))
     ]).then(values => {
-      console.log("AA", values);
       let result = [];
       if (values[0] == undefined && values[1] == undefined)
-        res.json({ stockData: { likes: 0 } });
-      if (values[0] !== undefined && values[1] !== undefined) {
+        result = { likes: 0 };
+      else if (values[0] !== undefined && values[1] !== undefined) {
         // both exist
         if (values[0] === null)
           result[0] = { error: "external source error", rel_likes: 0 };
@@ -141,6 +137,7 @@ module.exports = app => {
               };
               q = { $or: [q1, q2] };
             }
+            console.log(q,ip);
             col.findAndUpdate(
               q,
               { $push: { ips: ip } },
