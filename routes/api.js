@@ -13,7 +13,7 @@ module.exports = app => {
       stock = [undefined, undefined];
     } else if (typeof stock === "string") {
       stock = [];
-      stock.push(req.query.stock);
+      stock.push(req.query.stock ? req.query.stock : null);
       stock.push(undefined);
     } else {
       if (!stock[0]) stock[0] = null;
@@ -153,8 +153,8 @@ module.exports = app => {
                     values[1].likes - (values[0] ? values[0].likes : 0);
                   result[1] = values[1];
                 }
-                if(values[0]) delete values[0].likes;
-                if(values[1]) delete values[1].likes;
+                if (values[0]) delete values[0].likes;
+                if (values[1]) delete values[1].likes;
                 result = [result[0], result[1]];
               } else {
                 // only one
