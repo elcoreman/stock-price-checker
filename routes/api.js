@@ -63,7 +63,7 @@ module.exports = app => {
           assert.equal(null, err);
           let col = client.db("test").collection("stocks_ip");
           Promise.all([
-            !like
+            (!like&&!values[0])
               ? like
               : col
                   .findOne({ symbol: values[0].symbol.toLowerCase() })
