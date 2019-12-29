@@ -45,6 +45,17 @@ module.exports = app => {
 
       if (values[0] !== undefined && values[1] !== undefined) {
         // both exist
+
+        if (values[0] === null)
+          result[0] = { error: "external source error", likes: 0 };
+        if (values[1] === null)
+          result[1] = { error: "external source error", likes: 0 };
+        
+        if (values[0] === false) result[0] = { likes: 0 };
+        else if (values[1] === false) result[1] = { likes: 0 };
+        else if (values[0] !== undefined) result[0] = values[0];
+        else if (values[1] !== undefined) result[1] = values[1];
+        
       } else {
         // only one
         if (values[0] === null)
@@ -53,6 +64,8 @@ module.exports = app => {
           result[1] = { error: "external source error", likes: 0 };
         else if (values[0] === false) result[0] = { likes: 0 };
         else if (values[1] === false) result[1] = { likes: 0 };
+        else if (values[0] !== undefined) result[0] = values[0];
+        else if (values[1] !== undefined) result[1] = values[1];
       }
     });
   };
