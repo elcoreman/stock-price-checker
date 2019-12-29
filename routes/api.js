@@ -85,7 +85,12 @@ module.exports = app => {
       if (!stock[1]) stock[1] = null;
     }
     let like = req.query.like ? req.query.like.toLowerCase() === "true" : false;
-    const ip = req.header("x-forwarded-for") || req.connection.remoteAddress;
+    const ip =
+      (
+        req.headers["X-Forwarded-For"] ||
+        req.headers["x-forwarded-for"] ||
+        ""
+      ).split(",")[0] || req.client.remoteAddress;
     Promise.all([
       !stock[0]
         ? stock[0]
@@ -137,8 +142,8 @@ module.exports = app => {
               };
               q = { $or: [q1, q2] };
             }
-            console.log(q,ip);
-            col.findAndUpdate(
+            console.log(q);
+            col.findOneAndUpdate(
               q,
               { $push: { ips: ip } },
               { upsert: true },
