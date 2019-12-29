@@ -127,32 +127,41 @@ module.exports = app => {
         (err, client) => {
           assert.equal(null, err);
           let col = client.db("test").collection("stocks_ip");
+          
+          Promise.all().then();
           if (!like) {
             next2(col, res, values);
           } else {
-            let q1 = {
-              symbol: values[0].symbol.toLowerCase(),
-              ips: { $nin: [ip] }
-            };
-            let q = q1;
-            if (values[1]) {
-              let q2 = {
-                symbol: values[1].symbol.toLowerCase(),
-                ips: { $nin: [ip] }
-              };
-              q = { $or: [q1, q2] };
-            }
-            console.log(q);
-            col.findOneAndUpdate(
-              q,
-              { $push: { ips: ip } },
-              { upsert: true },
-              (err, resdb) => {
-                assert.equal(null, err);
-                next2(col, res, values);
-              }
-            );
+            col
+              .findOne({ symbol: values[0].symbol.toLowerCase() })
+              .then(dbresult => {
+                let q1 = {
+                  symbol: values[0].symbol.toLowerCase(),
+                  ips: { $nin: [ip] }
+                };
+                let q = q1;
+                if (values[1]) {
+                  let q2 = {
+                    symbol: values[1].symbol.toLowerCase(),
+                    ips: { $nin: [ip] }
+                  };
+                  q = { $or: [q1, q2] };
+                }
+                console.log(q);
+                col.findOneAndUpdate(
+                  q,
+                  { $push: { ips: ip } },
+                  dbresult ? {} : { upsert: true },
+                  (err, dbresult) => {
+                    assert.equal(null, err);
+                    next2(col, res, values);
+                  }
+                );
+              })
+              .catch(err => console.log("err:", err));
           }
+          
+          
         }
       );
     });
