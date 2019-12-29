@@ -39,23 +39,27 @@ module.exports = app => {
           )
     ]).then(values => {
       let result = [];
-
       if (values[0] == undefined && values[1] == undefined)
         res.json({ stockData: { likes: 0 } });
-
       if (values[0] !== undefined && values[1] !== undefined) {
         // both exist
-
         if (values[0] === null)
-          result[0] = { error: "external source error", likes: 0 };
+          result[0] = { error: "external source error", rel_likes: 0 };
+        else if (values[0] === false) result[0] = { rel_likes: 0 };
+        else {
+          values[0].rel_likes = values[0].likes;
+          delete values[0].likes;
+          result[0] = values[0];
+        }
         if (values[1] === null)
-          result[1] = { error: "external source error", likes: 0 };
-        
-        if (values[0] === false) result[0] = { likes: 0 };
-        else if (values[1] === false) result[1] = { likes: 0 };
-        else if (values[0] !== undefined) result[0] = values[0];
-        else if (values[1] !== undefined) result[1] = values[1];
-        
+          result[1] = { error: "external source error", rel_likes: 0 };
+        else if (values[1] === false) result[1] = { rel_likes: 0 };
+        else {
+          values[1].rel_likes = values[1].likes;
+          delete values[1].likes;
+          result[1] = values[1];
+        }
+        result = [result[0], result[1]];
       } else {
         // only one
         if (values[0] === null)
@@ -66,7 +70,9 @@ module.exports = app => {
         else if (values[1] === false) result[1] = { likes: 0 };
         else if (values[0] !== undefined) result[0] = values[0];
         else if (values[1] !== undefined) result[1] = values[1];
+        result = result[0] || result[1];
       }
+      res.json({ stockData: result });
     });
   };
 
