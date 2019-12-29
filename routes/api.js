@@ -8,6 +8,7 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, values) => {
+    console.log(values);
     Promise.all([
       !values[0]
         ? values[0]
@@ -38,6 +39,7 @@ module.exports = app => {
             }
           )
     ]).then(values => {
+      console.log(values);
       let result = [];
       if (values[0] == undefined && values[1] == undefined)
         res.json({ stockData: { likes: 0 } });
