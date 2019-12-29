@@ -68,20 +68,30 @@ module.exports = app => {
               : col
                   .findOne({ symbol: values[0].symbol.toLowerCase() })
                   .then(dbresult => {
-                    let q1 = {
-                      symbol: values[0].symbol.toLowerCase(),
-                      ips: { $nin: [ip] }
-                    };
-                    let q = q1;
-                    if (values[1]) {
-                      let q2 = {
+                    col.findOneAndUpdate(
+                      {
+                        symbol: values[0].symbol.toLowerCase(),
+                        ips: { $nin: [ip] }
+                      },
+                      { $push: { ips: ip } },
+                      dbresult ? {} : { upsert: true },
+                      (err, dbresult) => {
+                        assert.equal(null, err);
+                        return like;
+                      }
+                    );
+                  })
+                  .catch(err => console.log("err:", err)),
+            !like
+              ? like
+              : col
+                  .findOne({ symbol: values[1].symbol.toLowerCase() })
+                  .then(dbresult => {
+                    col.findOneAndUpdate(
+                      {
                         symbol: values[1].symbol.toLowerCase(),
                         ips: { $nin: [ip] }
-                      };
-                      q = { $or: [q1, q2] };
-                    }
-                    col.findOneAndUpdate(
-                      q,
+                      },
                       { $push: { ips: ip } },
                       dbresult ? {} : { upsert: true },
                       (err, dbresult) => {
@@ -127,20 +137,17 @@ module.exports = app => {
                   result[0] = { error: "external source error", rel_likes: 0 };
                 else if (values[0] === false) result[0] = { rel_likes: 0 };
                 else {
-                  values[0].rel_likes =
-                    values[0].likes - (values[1].likes || 0);
-                  delete values[0].likes;
+                  values[0].rel_likes = values[0].likes - values[1].likes;
                   result[0] = values[0];
                 }
                 if (values[1] === null)
                   result[1] = { error: "external source error", rel_likes: 0 };
                 else if (values[1] === false) result[1] = { rel_likes: 0 };
                 else {
-                  values[1].rel_likes =
-                    values[1].likes;// - (values[0].likes || 0);
-                  delete values[1].likes;
+                  values[1].rel_likes = values[1].likes - values[0].likes;
                   result[1] = values[1];
                 }
+                delete values[0].likes, values[1].likes;
                 result = [result[0], result[1]];
               } else {
                 // only one
