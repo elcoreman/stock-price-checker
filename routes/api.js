@@ -8,7 +8,7 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
   const next2 = (col, res, values) => {
-    console.log(values);
+    //console.log(values);
     Promise.all([
       !values[0]
         ? values[0]
@@ -16,11 +16,10 @@ module.exports = app => {
             { symbol: values[0].symbol.toLowerCase() },
             (err, dbResult) => {
               assert.equal(null, err);
-              let likesCount1 = dbResult ? dbResult.ips.length : 0;
               return {
                 stock: values[0].symbol,
                 price: values[0].latestPrice,
-                likes: likesCount1
+                likes: dbResult ? dbResult.ips.length : 0
               };
             }
           ),
@@ -30,16 +29,15 @@ module.exports = app => {
             { symbol: values[1].symbol.toLowerCase() },
             (err, dbResult) => {
               assert.equal(null, err);
-              let likesCount2 = dbResult ? dbResult.ips.length : 0;
               return {
                 stock: values[1].symbol,
                 price: values[1].latestPrice,
-                likes: likesCount2
+                likes: dbResult ? dbResult.ips.length : 0
               };
             }
           )
     ]).then(values => {
-      console.log(values);
+      console.log("AA", values);
       let result = [];
       if (values[0] == undefined && values[1] == undefined)
         res.json({ stockData: { likes: 0 } });
