@@ -7,71 +7,6 @@ const request = require("request-promise-native");
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = app => {
-  const next2 = (col, res, values) => {
-    Promise.all([
-      !values[0]
-        ? values[0]
-        : col
-            .findOne({ symbol: values[0].symbol.toLowerCase() })
-            .then(dbResult => {
-              return {
-                stock: values[0].symbol,
-                price: values[0].latestPrice,
-                likes: dbResult ? dbResult.ips.length : 0
-              };
-            })
-            .catch(err => console.log("err:", err)),
-      !values[1]
-        ? values[1]
-        : col
-            .findOne({ symbol: values[1].symbol.toLowerCase() })
-            .then(dbResult => {
-              return {
-                stock: values[1].symbol,
-                price: values[1].latestPrice,
-                likes: dbResult ? dbResult.ips.length : 0
-              };
-            })
-            .catch(err => console.log("err:", err))
-    ]).then(values => {
-      let result = [];
-      if (values[0] == undefined && values[1] == undefined)
-        result = { likes: 0 };
-      else if (values[0] !== undefined && values[1] !== undefined) {
-        // both exist
-        if (values[0] === null)
-          result[0] = { error: "external source error", rel_likes: 0 };
-        else if (values[0] === false) result[0] = { rel_likes: 0 };
-        else {
-          values[0].rel_likes = values[0].likes;
-          delete values[0].likes;
-          result[0] = values[0];
-        }
-        if (values[1] === null)
-          result[1] = { error: "external source error", rel_likes: 0 };
-        else if (values[1] === false) result[1] = { rel_likes: 0 };
-        else {
-          values[1].rel_likes = values[1].likes;
-          delete values[1].likes;
-          result[1] = values[1];
-        }
-        result = [result[0], result[1]];
-      } else {
-        // only one
-        if (values[0] === null)
-          result[0] = { error: "external source error", likes: 0 };
-        else if (values[1] === null)
-          result[1] = { error: "external source error", likes: 0 };
-        else if (values[0] === false) result[0] = { likes: 0 };
-        else if (values[1] === false) result[1] = { likes: 0 };
-        else if (values[0] !== undefined) result[0] = values[0];
-        else if (values[1] !== undefined) result[1] = values[1];
-        result = result[0] || result[1];
-      }
-      res.json({ stockData: result });
-    });
-  };
-
   app.route("/api/stock-prices").get((req, res) => {
     let stock = req.query.stock;
     if (typeof stock === "undefined") {
@@ -127,41 +62,101 @@ module.exports = app => {
         (err, client) => {
           assert.equal(null, err);
           let col = client.db("test").collection("stocks_ip");
-          
-          Promise.all().then();
-          if (!like) {
-            next2(col, res, values);
-          } else {
-            col
-              .findOne({ symbol: values[0].symbol.toLowerCase() })
-              .then(dbresult => {
-                let q1 = {
-                  symbol: values[0].symbol.toLowerCase(),
-                  ips: { $nin: [ip] }
-                };
-                let q = q1;
-                if (values[1]) {
-                  let q2 = {
-                    symbol: values[1].symbol.toLowerCase(),
-                    ips: { $nin: [ip] }
-                  };
-                  q = { $or: [q1, q2] };
+          Promise.all([
+            !like
+              ? like
+              : col
+                  .findOne({ symbol: values[0].symbol.toLowerCase() })
+                  .then(dbresult => {
+                    let q1 = {
+                      symbol: values[0].symbol.toLowerCase(),
+                      ips: { $nin: [ip] }
+                    };
+                    let q = q1;
+                    if (values[1]) {
+                      let q2 = {
+                        symbol: values[1].symbol.toLowerCase(),
+                        ips: { $nin: [ip] }
+                      };
+                      q = { $or: [q1, q2] };
+                    }
+                    col.findOneAndUpdate(
+                      q,
+                      { $push: { ips: ip } },
+                      dbresult ? {} : { upsert: true },
+                      (err, dbresult) => {
+                        assert.equal(null, err);
+                        return like;
+                      }
+                    );
+                  })
+                  .catch(err => console.log("err:", err))
+          ]).then(like => {
+            Promise.all([
+              !values[0]
+                ? values[0]
+                : col
+                    .findOne({ symbol: values[0].symbol.toLowerCase() })
+                    .then(dbResult => {
+                      return {
+                        stock: values[0].symbol,
+                        price: values[0].latestPrice,
+                        likes: dbResult ? dbResult.ips.length : 0
+                      };
+                    })
+                    .catch(err => console.log("err:", err)),
+              !values[1]
+                ? values[1]
+                : col
+                    .findOne({ symbol: values[1].symbol.toLowerCase() })
+                    .then(dbResult => {
+                      return {
+                        stock: values[1].symbol,
+                        price: values[1].latestPrice,
+                        likes: dbResult ? dbResult.ips.length : 0
+                      };
+                    })
+                    .catch(err => console.log("err:", err))
+            ]).then(values => {
+              let result = [];
+              if (values[0] == undefined && values[1] == undefined)
+                result = { likes: 0 };
+              else if (values[0] !== undefined && values[1] !== undefined) {
+                // both exist
+                if (values[0] === null)
+                  result[0] = { error: "external source error", rel_likes: 0 };
+                else if (values[0] === false) result[0] = { rel_likes: 0 };
+                else {
+                  values[0].rel_likes =
+                    values[0].likes - (values[1].likes || 0);
+                  delete values[0].likes;
+                  result[0] = values[0];
                 }
-                console.log(q);
-                col.findOneAndUpdate(
-                  q,
-                  { $push: { ips: ip } },
-                  dbresult ? {} : { upsert: true },
-                  (err, dbresult) => {
-                    assert.equal(null, err);
-                    next2(col, res, values);
-                  }
-                );
-              })
-              .catch(err => console.log("err:", err));
-          }
-          
-          
+                if (values[1] === null)
+                  result[1] = { error: "external source error", rel_likes: 0 };
+                else if (values[1] === false) result[1] = { rel_likes: 0 };
+                else {
+                  values[1].rel_likes =
+                    values[1].likes;// - (values[0].likes || 0);
+                  delete values[1].likes;
+                  result[1] = values[1];
+                }
+                result = [result[0], result[1]];
+              } else {
+                // only one
+                if (values[0] === null)
+                  result[0] = { error: "external source error", likes: 0 };
+                else if (values[1] === null)
+                  result[1] = { error: "external source error", likes: 0 };
+                else if (values[0] === false) result[0] = { likes: 0 };
+                else if (values[1] === false) result[1] = { likes: 0 };
+                else if (values[0] !== undefined) result[0] = values[0];
+                else if (values[1] !== undefined) result[1] = values[1];
+                result = result[0] || result[1];
+              }
+              res.json({ stockData: result });
+            });
+          });
         }
       );
     });
