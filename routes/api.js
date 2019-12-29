@@ -38,7 +38,7 @@ module.exports = app => {
             resolveWithFullResponse: true
           })
             .then(response =>
-              response.statusCode == 200 && response.body != "Invalid symbol"
+              response.statusCode == 200 && response.body != '"Invalid symbol"'
                 ? JSON.parse(response.body)
                 : false
             )
@@ -53,16 +53,13 @@ module.exports = app => {
               "/quote",
             resolveWithFullResponse: true
           })
-            .then(response =>{
-              console.log(response.body);
-              response.statusCode == 200 && response.body !== "Invalid symbol"
+            .then(response =>
+              response.statusCode == 200 && response.body != '"Invalid symbol"'
                 ? JSON.parse(response.body)
                 : false
-            }
             )
             .catch(err => console.log("err:", err))
     ]).then(values => {
-      console.log(!like, values[0], !like, values[1]);
       MongoClient.connect(
         CONNECTION_STRING,
         { useUnifiedTopology: true },
@@ -144,17 +141,20 @@ module.exports = app => {
                   result[0] = { error: "external source error", rel_likes: 0 };
                 else if (values[0] === false) result[0] = { rel_likes: 0 };
                 else {
-                  values[0].rel_likes = values[0].likes - values[1].likes;
+                  values[0].rel_likes =
+                    values[0].likes - (values[1] ? values[1].likes : 0);
                   result[0] = values[0];
                 }
                 if (values[1] === null)
                   result[1] = { error: "external source error", rel_likes: 0 };
                 else if (values[1] === false) result[1] = { rel_likes: 0 };
                 else {
-                  values[1].rel_likes = values[1].likes - values[0].likes;
+                  values[1].rel_likes =
+                    values[1].likes - (values[0] ? values[0].likes : 0);
                   result[1] = values[1];
                 }
-                delete values[0].likes, values[1].likes;
+                if(values[0]) delete values[0].likes;
+                if(values[1]) delete values[1].likes;
                 result = [result[0], result[1]];
               } else {
                 // only one
